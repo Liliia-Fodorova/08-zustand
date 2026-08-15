@@ -11,14 +11,21 @@ import { useDebouncedCallback } from "use-debounce";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
+
 export default function NotesClient({ tag }: { tag: string }) {
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const category = tag === "all" ? undefined : tag;
 
-  const { data, isLoading, isSuccess } = useQuery({
+  const { data, isLoading, isSuccess, isFetching } = useQuery({
     queryKey: ["notes", page, query, category],
-    queryFn: () => fetchNotes({ query, page, perPage: 8, tag: category }),
+    queryFn: () => 
+      fetchNotes({ 
+        query: query, 
+        page, 
+        perPage: 8, 
+        tag: category === "all" ? undefined : category 
+      }),
     staleTime: 60 * 1000,
     placeholderData: keepPreviousData,
   });
@@ -31,10 +38,10 @@ export default function NotesClient({ tag }: { tag: string }) {
   }, 500);
 
   useEffect(() => {
-    if (isSuccess && data.notes.length === 0) {
-      toast.error("No notes", {id:"no-notes-error"});
+    if (isSuccess && !isLoading && !isFetching && query && data?.notes.length === 0) {
+      toast.error("No notes found", { id: "no-notes-error" });
     }
-  }, [isSuccess, data]);
+  }, [isSuccess, isLoading, isFetching, query, data]);
 
   return (
     <>
